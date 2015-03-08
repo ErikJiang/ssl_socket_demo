@@ -1,13 +1,13 @@
 # SSLSocketDemo
 基于OpenSSL实现C/S SSL Socket简单交互程序
 
-## 关于客户端及服务端程序的编译：
+## 一、关于客户端及服务端程序的编译：
 ``` bash
 $ gcc -g -o client client.c -lssl -lcrypto
 $ gcc -g -o server server.c -lssl -lcrypto
 ```
 
-## 涉及到证书及密钥生成方法说明：
+## 二、涉及到证书及密钥生成方法说明：
 
 ### 1、CA根密钥及证书生成过程:
 ``` bash
