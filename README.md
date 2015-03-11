@@ -3,8 +3,8 @@
 
 ### 一、关于客户端及服务端程序的编译：
 ```bash
-$ gcc -o ssl_client ssl_client.c ssl_common.h -lssl -lcrypto
-$ gcc -o ssl_server ssl_server.c ssl_common.h -lssl -lcrypto
+$ make    #编译
+$ make clean    #b编译清除     
 ```
 
 ### 二、涉及到证书及密钥生成方法说明：
