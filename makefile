@@ -1,4 +1,4 @@
-LDFLAGS = -lssl -lcrypto
+LDFLAGS = -lssl
 
 all : ssl_client ssl_server
 
