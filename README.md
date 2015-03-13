@@ -39,6 +39,7 @@ $ openssl x509 -req -days 3650 -sha1 -extensions v3_req -CA root.crt -CAkey root
 ```
 **合并证书和密钥生成PFX文件：**
 ```bash
+# PFX格式供客户端安装
 $ openssl pkcs12 -export -in client.crt -inkey client.key -out client.pfx
 ```
 
