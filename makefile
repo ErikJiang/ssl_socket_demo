@@ -12,3 +12,4 @@ ssl_client.o ssl_server.o : ssl_common.h
 .PHONY : clean
 clean :
 	rm ssl_client ssl_server ssl_client.o ssl_server.o
+

@@ -17,10 +17,17 @@
 #define CLIENT_CERT		"certs/client/client.crt"		//client cert file
 #define CLIENT_KEYF		"certs/client/client.key"		//client key file
 #define ROOTCERTF		"certs/root/root.crt"			//root cert file
+#define SERVERHTML		\
+ 						"<html>\n" \
+ 							"<body>\n" \
+ 								"<h3>Client Request:</h3>\n" \
+ 								"<p>\n{\n%s\n}\n</p>\n" \
+ 								"<br/>\n" \
+ 								"<h3>Server Response:</h3>\n" \
+								"<p>\n{\nHello! I am Server!\n}\n</p>\n" \
+ 							"</body>\n" \
+ 						"</html>"
 
-#define CHK_NULL(x)	if ((x)==NULL) exit (1)
-#define CHK_ERR(err,s)	if ((err)==-1) { perror(s); exit(1); }
-#define CHK_SSL(err)	if ((err)==-1) { ERR_print_errors_fp(stderr); exit(2); }
 
 #endif	/* !_SSL_COMMON_H_ */
 

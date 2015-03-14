@@ -56,10 +56,11 @@ SSL_CTX* init_server_ctx(void)
     SSL_CTX *ctx;
 
     SSL_library_init();                 /* init algorithms library */
-    OpenSSL_add_all_algorithms();		/* load & register all cryptos, etc. */
-    SSL_load_error_strings();			/* load all error messages */
-    method = SSLv23_server_method();    /* create new server-method instance */
-    ctx = SSL_CTX_new(method);			/* create new context from method */
+    OpenSSL_add_all_algorithms();       /* load & register all cryptos, etc. */
+    SSL_load_error_strings();           /* load all error messages */
+    //method = SSLv23_server_method();  /* create new server-method instance */
+    method = TLSv1_server_method();
+    ctx = SSL_CTX_new(method);          /* create new context from method */
     if ( ctx == NULL )
     {
         ERR_print_errors_fp(stderr);
@@ -97,18 +98,20 @@ int verify_callback(int ok, X509_STORE_CTX *store)
 /*---------------------------------------------------------------------*/
 void load_certificates(SSL_CTX* ctx, char* CaFile, char* CertFile, char* KeyFile)
 {
+    #if 1
     /* set maximum depth for the certificate chain */
-    SSL_CTX_set_verify_depth(ctx, 1);
+    //SSL_CTX_set_verify_depth(ctx, 1);
     /* set voluntary certification mode*/
-    //SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
     /* set mandatory certification mode*/
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
+    //SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
     /* load CA certificate file */
     if (SSL_CTX_load_verify_locations(ctx, CaFile, NULL) <=0)
     {
         ERR_print_errors_fp(stderr);
         abort();
     }
+    #endif
 	/* set the local certificate from CertFile */
     if ( SSL_CTX_use_certificate_file(ctx, CertFile, SSL_FILETYPE_PEM) <= 0 )
     {
@@ -143,7 +146,8 @@ void show_certs_info(SSL* ssl)
 
     /* Get connect use algorithm type */
     //printf("SSL connection using %s\n", SSL_get_cipher(ssl));
-    cert = SSL_get_peer_certificate(ssl);	/* Get certificates (if available) */
+    /* Get certificates (if available) */
+    cert = SSL_get_peer_certificate(ssl);
     if ( cert != NULL )
     {
         printf("Server certificates:\n");
@@ -162,37 +166,37 @@ void show_certs_info(SSL* ssl)
 /*---------------------------------------------------------------------*/
 /*--- server_handler - SSL servlet                                  ---*/
 /*---------------------------------------------------------------------*/
-void server_handler(SSL* ssl)	/* Serve the connection -- threadable */
+void server_handler(SSL* ssl)   /* Serve the connection -- threadable */
 {
     char buf[1024];
-    char reply[1024];
+    char reply[1280];
     int sd, bytes;
-    const char* serverEcho="Hello, I am Server!";
 
-    if (FAIL == SSL_accept(ssl))					/* do SSL-protocol accept */
+    if (FAIL == SSL_accept(ssl))                    /* do SSL-protocol accept */
     {
         ERR_print_errors_fp(stderr);   
     }
     else
     {
         show_certs_info(ssl);                       /* get any certificates */
-        bytes = SSL_read(ssl, buf, sizeof(buf)-1);	/* get request */
+        bytes = SSL_read(ssl, buf, sizeof(buf)-1);  /* get request */
         if (FAIL == bytes)
         {
             ERR_print_errors_fp(stderr);
         }
         buf[bytes] = '\0';
         printf("Client msg: \"%s\"\n", buf);
-        bytes = SSL_write(ssl, serverEcho, strlen(serverEcho));	/* send reply */
+        snprintf(reply, sizeof(reply), SERVERHTML, buf);
+        bytes = SSL_write(ssl, reply, strlen(reply));   /* send reply */
         if (FAIL == bytes)
         {
             ERR_print_errors_fp(stderr);
         }
     }
-    sd = SSL_get_fd(ssl);							/* get socket connection */
-    SSL_shutdown(ssl);                              /* shutdown SSL link */
-    SSL_free(ssl);									/* release SSL state */
-    close(sd);										/* close connection */
+    sd = SSL_get_fd(ssl);               /* get socket connection */
+    //SSL_shutdown(ssl);                /* shutdown SSL link */
+    SSL_free(ssl);                      /* release SSL state */
+    close(sd);                          /* close connection */
 }
 
 /*---------------------------------------------------------------------*/
@@ -221,12 +225,12 @@ int main(int count, char *strings[])
         int client = accept(server, (struct sockaddr*)&addr, &len);
         printf("Connection: %s:%d\n",
         	inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-        ssl = SSL_new(ctx);                 /* get new SSL state with context */
-        SSL_set_fd(ssl, client);            /* set connection socket to SSL state */
-        server_handler(ssl);                /* service connection */
+        ssl = SSL_new(ctx);             /* get new SSL state with context */
+        SSL_set_fd(ssl, client);        /* set connection socket to SSL state */
+        server_handler(ssl);            /* service connection */
     }
-    close(server);                          /* close server socket */
-    SSL_CTX_free(ctx);                      /* release context */
+    close(server);                      /* close server socket */
+    SSL_CTX_free(ctx);                  /* release context */
 
     return 0;
 }

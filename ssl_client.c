@@ -61,7 +61,8 @@ SSL_CTX* init_client_ctx(void)
     SSL_library_init();                 /* init algorithms library */
     OpenSSL_add_all_algorithms();       /* load & register all cryptos, etc. */
     SSL_load_error_strings();           /* load all error messages */
-    method = SSLv23_client_method();    /* create new server-method instance */
+    //method = SSLv23_client_method();  /* create new server-method instance */
+    method = TLSv1_client_method();
     ctx = SSL_CTX_new(method);          /* create new context from method */
     if ( ctx == NULL )
     {
@@ -100,8 +101,9 @@ int verify_callback(int ok, X509_STORE_CTX *store)
 /*---------------------------------------------------------------------*/
 void load_certificates(SSL_CTX* ctx, char* CaFile, char* CertFile, char* KeyFile)
 {
+    #if 1
     /* set maximum depth for the certificate chain */
-    SSL_CTX_set_verify_depth(ctx, 1);
+    //SSL_CTX_set_verify_depth(ctx, 1);
     /* set verify mode*/
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     /* load CA certificate file */
@@ -110,6 +112,7 @@ void load_certificates(SSL_CTX* ctx, char* CaFile, char* CertFile, char* KeyFile
         ERR_print_errors_fp(stderr);
         abort();
     }
+    #endif
     /* set the local certificate from CertFile */
     if ( SSL_CTX_use_certificate_file(ctx, CertFile, SSL_FILETYPE_PEM) <= 0 )
     {
@@ -147,7 +150,7 @@ void show_certs_info(SSL* ssl)
         printf("Server certificates:\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         printf("Subject: %s\n", line);
-        free(line);							/* free the malloc'ed string */
+        free(line);                         /* free the malloc'ed string */
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         printf("Issuer: %s\n", line);
         free(line);                         /* free the malloc'ed string */
@@ -180,26 +183,28 @@ int main(int count, char *strings[])
     ctx = init_client_ctx();                                        /* initialize SSL */
     load_certificates(ctx, ROOTCERTF, CLIENT_CERT, CLIENT_KEYF);    /* load certs */
     server = open_connection(hostname, atoi(portnum));
-    ssl = SSL_new(ctx);						/* create new SSL connection state */
-    SSL_set_fd(ssl, server);				/* attach the socket descriptor */
-    if ( SSL_connect(ssl) == FAIL )			/* perform the connection */
+    ssl = SSL_new(ctx);                 /* create new SSL connection state */
+    SSL_set_fd(ssl, server);            /* attach the socket descriptor */
+    if ( SSL_connect(ssl) == FAIL )     /* perform the connection */
+    {
         ERR_print_errors_fp(stderr);
+    }
     else
     {
         char *msg = "Hi! I am Client!";
 
         printf("Connected with %s encryption\n", SSL_get_cipher(ssl));
         show_certs_info(ssl);                       /* get any certs */
-        SSL_write(ssl, msg, strlen(msg));			/* encrypt & send message */
+        SSL_write(ssl, msg, strlen(msg));           /* encrypt & send message */
         memset(buf, 0, sizeof(buf));
-        bytes = SSL_read(ssl, buf, sizeof(buf)-1);	/* get reply & decrypt */
+        bytes = SSL_read(ssl, buf, sizeof(buf)-1);  /* get reply & decrypt */
         buf[bytes] = '\0';
         printf("Server msg: \"%s\"\n", buf);
         SSL_shutdown(ssl);                          /* shutdown SSL link */
         SSL_free(ssl);                              /* release connection state */
     }
-    close(server);									/* close socket */
-    SSL_CTX_free(ctx);								/* release context */
+    close(server);                                  /* close socket */
+    SSL_CTX_free(ctx);                              /* release context */
 
     return 0;
 }
