@@ -1,4 +1,4 @@
-## SSLSocketDemo
+## ssl_socket_demo
 基于OpenSSL工具包实现SSL Client/Server简单安全交互程序
 
 ### 一、关于客户端及服务端程序的编译：
